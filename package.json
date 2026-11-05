@@ -1,10 +1,10 @@
 {
   "name": "kalaconnect",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "KalaConnect — Cultural Talent, Availability & Event Coordination System",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm run dev"
   },
   "keywords": [],
   "author": "",

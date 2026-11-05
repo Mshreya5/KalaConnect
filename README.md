@@ -1,47 +1,38 @@
 # KalaConnect — Cultural Talent, Availability & Event Coordination System
 
-A centralized College DBMS Mini-Project designed to streamline cultural artist discovery, availability scheduling, event requirements matching, and participation tracking across collegiate cultural fests and clubs.
+A College DBMS Mini-Project that centralizes cultural artist discovery, availability scheduling, event requirements matching, and participation tracking across collegiate cultural fests and clubs.
 
 ---
 
-## 1. Project Overview & Motivation
+## 1. Project Overview
 
-In college campuses, organizing cultural fests (music competitions, dance fests, dramatics, street plays, literary debates, fine arts exhibitions) often suffers from:
-- **Fragmented Talent Records:** Student talents are scattered across paper forms, WhatsApp groups, and spreadsheets.
-- **Scheduling Conflicts:** Organizers frequently double-book performers who have conflicting class/lab schedules or prior rehearsals.
-- **Mismatch in Requirements:** Event managers struggle to identify exact skill proficiencies (e.g., Classical Carnatic Vocal vs. Western Pop Vocal).
-- **Lack of Central Coordination:** Tracking whether student participants actually showed up, registered, or won awards is cumbersome.
-
-**KalaConnect** solves this by establishing a robust, 3NF-normalized relational database backplane that connects students (**Participants**), event coordinators (**Organizers**), art forms (**Cultural Activities & Skills**), scheduling (**Availability**), and execution (**Events, Requirements & Participation**).
+College cultural fest organizers face fragmented talent records, scheduling conflicts, skill mismatches, and no central coordination. KalaConnect solves this with a 3NF-normalized relational database connecting participants, organizers, skills, availability, and events through a full-stack web application.
 
 ---
 
 ## 2. Tech Stack
 
-- **Database Engine:** MySQL Community Server 8.0+
-- **Database Management Tool:** MySQL Workbench
-- **Backend API:** Node.js with Express.js (RESTful API architecture)
-- **Frontend Client:** React 18+ with Vite
-- **Version Control:** Git & GitHub
+| Layer | Technology |
+| :--- | :--- |
+| Frontend | React 19 + Vite + Tailwind CSS |
+| Backend | Node.js + Express.js (REST API) |
+| Database | MySQL 8.0+ via mysql2 |
+| Tools | MySQL Workbench, Git, GitHub |
 
 ---
 
-## 3. Team Member Division of Responsibilities
+## 3. Team Division of Responsibilities
 
-To ensure balanced academic contribution, the system is partitioned into two clear modules sharing a unified database schema:
-
-| Module / Scope | Member 1 (Lead: Talent & Scheduling) | Member 2 (Lead: Events & Coordination) |
+| Scope | Member 1 (Talent & Scheduling) | Member 2 (Events & Coordination) |
 | :--- | :--- | :--- |
-| **Entities & Tables** | `participants`, `cultural_activities`, `skills`, `participant_skills`, `availability` | `organizers`, `events`, `event_requirements`, `participation` |
-| **SQL Queries** | Talent catalog filtering, skill proficiency lookups, availability conflict detection, activity aggregations (`queries_member1.sql`) | Event requirement deficit analysis, organizer workload, participation approval tracking, turnout summaries (`queries_member2.sql`) |
-| **Advanced Programmability** | Availability validation & conflict prevention **Trigger** (`trigger.sql`) | Automated event talent matching & registration **Stored Procedure** (`procedure.sql`) |
-| **Shared Artifacts** | Unified 9-table schema (`schema.sql`), Database Views (`views.sql`), Sample dataset (`sample_data.sql`), Inspection scripts (`inspect_kalaconnect.sql`) | Same shared schema, views, sample data, and joint schema integrity review |
+| **Tables** | `participants`, `cultural_activities`, `skills`, `participant_skills`, `availability` | `organizers`, `events`, `event_requirements`, `participation` |
+| **SQL Queries** | `queries_member1.sql` — talent catalog, skill lookups, availability conflict detection | `queries_member2.sql` — event deficits, organizer workload, participation tracking |
+| **Programmability** | Availability validation trigger (`trigger.sql`) | Talent matching stored procedure (`procedure.sql`) |
+| **Shared** | `schema.sql`, `views.sql`, `sample_data.sql`, `inspect_kalaconnect.sql` | Same shared artifacts |
 
 ---
 
-## 4. Database Architecture (The 9 Core Tables)
-
-The system relies on nine strictly coordinated tables adhering to 3rd Normal Form (3NF):
+## 4. Database Architecture — 9 Core Tables (3NF)
 
 ```mermaid
 erDiagram
@@ -57,59 +48,179 @@ erDiagram
     SKILLS ||--o{ EVENT_REQUIREMENTS : needed_in
 ```
 
-### Table Summary:
-1. **`participants`**: Student details (ID, full name, email, phone, college roll/USN, department, year of study).
-2. **`organizers`**: Event coordinator details (ID, full name, email, phone, club/department name, designation).
-3. **`cultural_activities`**: Broad artistic categories (Performing Arts, Visual Arts, Literary Arts, Musical Arts).
-4. **`skills`**: Granular talents (e.g., Bharatanatyam, Beatboxing, Charcoal Sketching) classified under an activity.
-5. **`participant_skills`**: **Many-to-Many junction table** connecting participants to their skills with proficiency levels and years of experience.
-6. **`events`**: Scheduled cultural competitions, stage showcases, and fests organized by club leads.
-7. **`event_requirements`**: Specification of required skills and target participant counts per event.
-8. **`availability`**: Time slots and calendar dates when participants are free, preventing double-booking.
-9. **`participation`**: **Many-to-Many junction table** recording actual event registrations, performer roles, statuses, and feedback.
+| # | Table | Owner | Purpose |
+|---|-------|-------|---------|
+| 1 | `participants` | Member 1 | Student profiles — name, email, USN, department, year |
+| 2 | `organizers` | Member 2 | Club coordinators and faculty leads |
+| 3 | `cultural_activities` | Member 1 | Broad art domains — Dance, Music, Theatre, Visual Arts, Literary Arts |
+| 4 | `skills` | Member 1 | Granular talents under each activity (e.g., Bharatanatyam, Tabla) |
+| 5 | `participant_skills` | Member 1 | M:N junction — participant ↔ skill with proficiency and experience |
+| 6 | `events` | Member 2 | Scheduled competitions and showcases |
+| 7 | `event_requirements` | Member 2 | Required skills and headcount per event |
+| 8 | `availability` | Member 1 | Participant time slots — Available, Busy, Tentative |
+| 9 | `participation` | Member 2 | M:N junction — participant ↔ event with role and status |
 
 ---
 
-## 5. Database Normalization (1NF to 3NF) Explained
+## 5. Project Structure
 
-1. **First Normal Form (1NF) — Atomicity & No Repeating Groups:**
-   - No multi-valued attributes: A participant's multiple talents are not stored as comma-separated text (`"Singing, Dancing"`). Instead, each talent is an individual atomic foreign-key record in the junction table `participant_skills`.
-   - Every table has a well-defined Primary Key.
-2. **Second Normal Form (2NF) — Full Functional Dependency:**
-   - Eliminates partial dependencies on composite keys. In `participant_skills(participant_id, skill_id)`, attributes like `proficiency_level` and `years_of_experience` depend on the combination of *both* the participant and the specific skill, not just one of them.
-   - Student personal details (like `department`) are kept in `participants`, not repeated in `participant_skills`.
-3. **Third Normal Form (3NF) — Elimination of Transitive Dependencies:**
-   - Non-key attributes must depend solely on the primary key ($X \rightarrow Y$ where $X$ is a superkey).
-   - In `skills`, we do not store `activity_name` directly alongside `skill_name`; rather, we reference `activity_id`. Storing `activity_name` would create a transitive dependency (`skill_id` $\rightarrow$ `activity_id` $\rightarrow$ `activity_name`) causing update and deletion anomalies.
-
----
-
-## 6. Project Directory Structure
-
-```text
+```
 KalaConnect/
-├── .env.example              # Environment variables template (copy to .env locally)
-├── .gitignore                # Prevents credentials and node_modules from being pushed
-├── package.json              # Root project dependencies & metadata
-├── README.md                 # Project architecture, guidelines, and team division
+├── .env.example                  # Environment variables template
+├── .gitignore
+├── package.json
+├── README.md
+├── backend/
+│   ├── server.js                 # Express app entry point
+│   ├── config/db.js              # MySQL connection pool
+│   ├── controllers/
+│   │   ├── participantController.js
+│   │   ├── activityController.js
+│   │   ├── availabilityController.js
+│   │   └── talentController.js
+│   └── routes/
+│       ├── participants.js
+│       ├── activities.js
+│       ├── availability.js
+│       └── talents.js
+├── frontend/
+│   ├── src/
+│   │   ├── api/index.js          # Axios API client
+│   │   ├── components/           # Navbar, Alert, Spinner
+│   │   └── pages/                # Dashboard, Participants, Activities, MySkills, Availability, TalentSearch
+│   ├── .env                      # VITE_API_URL
+│   └── vite.config.js
 └── database/
-    ├── schema.sql            # Canonical 9-table schema definition (DDL with 3NF constraints)
-    ├── sample_data.sql       # Realistic sample records in dependency order
-    ├── queries_member1.sql   # Member 1 queries (Talent catalog, availability, skills)
-    ├── queries_member2.sql   # Member 2 queries (Events, requirements, organizer management)
-    ├── trigger.sql           # Shared trigger: Conflict detection & availability validation
-    ├── procedure.sql         # Shared procedure: Automated talent matching for events
-    ├── views.sql             # Reusable business views (Directories, fulfillments)
-    └── inspect_kalaconnect.sql# Read-only inspection script for MySQL Workbench
+    ├── schema.sql                # 9-table DDL (run first)
+    ├── sample_data.sql           # Seed data (run second)
+    ├── trigger.sql               # Availability + booking triggers (run third)
+    ├── views.sql                 # 4 reusable views (run fourth)
+    ├── queries_member1.sql       # 8 Member 1 analytical queries
+    ├── queries_member2.sql       # Member 2 queries
+    ├── procedure.sql             # Member 2 stored procedures
+    ├── test_cases.sql            # Trigger test cases
+    ├── TESTING.md                # Full testing guide
+    ├── inspect_kalaconnect.sql   # Read-only DB inspection
+    └── cleanup_and_setup.sql     # Full rebuild script
 ```
 
 ---
 
-## 7. Phase 1 Setup Instructions (Safe Database Inspection First)
+## 6. Member 1 API Endpoints
 
-1. **Do not run `schema.sql` immediately!**
-2. Open **MySQL Workbench** and connect to your local MySQL server.
-3. Open [`database/inspect_kalaconnect.sql`](file:///c:/Users/Shreya/OneDrive/Desktop/KalaConnect/database/inspect_kalaconnect.sql).
-4. Run the read-only queries in Step 1 through Step 6 to inspect existing tables, row counts, and foreign keys.
-5. Review the inspection results with your teammate to verify if any existing data in tables like `artistprofiles` or `bookings` needs to be retained.
-6. Once approved, the shared canonical schema [`database/schema.sql`](file:///c:/Users/Shreya/OneDrive/Desktop/KalaConnect/database/schema.sql) can be deployed cleanly.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check |
+| GET | `/api/dashboard/stats` | Participant count, skill count, availability summary, category stats |
+| GET | `/api/participants` | List all participants |
+| POST | `/api/participants` | Register new participant |
+| GET | `/api/participants/:id` | Get participant by ID |
+| PUT | `/api/participants/:id` | Update participant |
+| DELETE | `/api/participants/:id` | Delete participant |
+| GET | `/api/activities` | List all cultural activities |
+| GET | `/api/activities/:id/skills` | List skills under an activity |
+| GET | `/api/participants/:id/skills` | Get participant's skills |
+| POST | `/api/participants/:id/skills` | Add skill to participant |
+| PUT | `/api/participants/:id/skills/:skillId` | Update participant skill |
+| DELETE | `/api/participants/:id/skills/:skillId` | Remove participant skill |
+| GET | `/api/participants/:id/availability` | Get participant's availability slots |
+| POST | `/api/participants/:id/availability` | Add availability slot |
+| PUT | `/api/availability/:id` | Update availability slot |
+| DELETE | `/api/availability/:id` | Delete availability slot |
+| GET | `/api/talents/search` | Search by skill, category, proficiency |
+| GET | `/api/talents/available` | Find available participants by date and time |
+
+---
+
+## 7. Database Triggers
+
+**Member 1 — Availability Triggers (`trigger.sql`)**
+
+- `trg_validate_availability_before_insert` — rejects invalid time periods (start >= end) and overlapping slots on the same date for the same participant. Adjacent slots are allowed.
+- `trg_validate_availability_before_update` — same rules on UPDATE, excluding the current row.
+
+**Member 2 — Booking Trigger (`trigger.sql`)**
+
+- `trg_validate_participant_availability_before_booking` — prevents registering a participant who is marked Busy or already confirmed in a simultaneous event.
+
+---
+
+## 8. Database Views (`views.sql`)
+
+| View | Purpose |
+|------|---------|
+| `v_participant_skill_summary` | Per-participant skill count, activity count, experience rollup |
+| `v_talent_directory` | Flattened participant + skill + activity listing for search |
+| `v_event_fulfillment_status` | Required vs confirmed headcount per event skill (Member 2) |
+| `v_upcoming_event_roster` | Confirmed participant roster for scheduled events (Member 2) |
+
+---
+
+## 9. Setup Instructions
+
+### Prerequisites
+- Node.js 18+
+- MySQL 8.0+
+- MySQL Workbench
+
+### Step 1 — Clone and configure environment
+
+```powershell
+cd "C:\Users\Shreya\OneDrive\Desktop\KalaConnect"
+Copy-Item .env.example .env
+```
+
+Edit `.env` and set `DB_PASSWORD` to your MySQL root password.
+
+### Step 2 — Initialize the database (MySQL Workbench)
+
+Run these files in order using **File → Open SQL Script → ⚡ Execute All**. Before running each file, double-click `kalaconnect` in the left Schemas panel to keep it active.
+
+```
+1. Create database manually: run  CREATE DATABASE IF NOT EXISTS kalaconnect;
+2. database/schema.sql
+3. database/sample_data.sql
+4. database/trigger.sql
+5. database/views.sql
+```
+
+### Step 3 — Start the backend
+
+```powershell
+cd backend
+npm install
+npm run dev
+# API running at http://localhost:5000
+```
+
+### Step 4 — Start the frontend (new terminal)
+
+```powershell
+cd frontend
+npm install
+npm run dev
+# App running at http://localhost:5173
+```
+
+---
+
+## 10. Normalization Summary (1NF → 3NF)
+
+- **1NF:** No multi-valued columns. Each participant skill is a separate row in `participant_skills`, not a comma-separated string.
+- **2NF:** No partial dependencies. In `participant_skills`, `proficiency_level` depends on both `participant_id` and `skill_id` together.
+- **3NF:** No transitive dependencies. `skills` stores `activity_id` (FK), not `activity_name` directly, eliminating the transitive chain `skill_id → activity_id → activity_name`.
+
+---
+
+## 11. Member 1 Implementation Status
+
+| Feature | Frontend Page | API | DB |
+|---------|--------------|-----|----|
+| Register / edit / delete participant | `/participants` | POST/PUT/DELETE `/api/participants` | `participants` |
+| Browse activities and skills | `/activities` | GET `/api/activities` | `cultural_activities`, `skills` |
+| Add / edit / remove participant skills | `/skills` | POST/PUT/DELETE `/api/participants/:id/skills` | `participant_skills` |
+| Add / edit / delete availability slots | `/availability` | POST/PUT/DELETE `/api/availability` | `availability` |
+| Overlap prevention | `/availability` | 409 from trigger | `trg_validate_availability_before_insert/update` |
+| Search by skill / category / proficiency | `/search` | GET `/api/talents/search` | `participant_skills`, `skills`, `cultural_activities` |
+| Search by availability date/time | `/search` | GET `/api/talents/available` | `availability` |
+| Dashboard statistics | `/` | GET `/api/dashboard/stats` | All Member 1 tables |
