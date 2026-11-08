@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+=======
+USE kalaconnect;
+
+>>>>>>> 0a48ebb (refactor: remove all comments from source files)
 SET FOREIGN_KEY_CHECKS = 0;
 
 TRUNCATE TABLE participation;
@@ -20,20 +25,20 @@ INSERT INTO cultural_activities (activity_id, activity_name, category, descripti
 (5, 'Literary Arts & Debating', 'Literary Arts', 'Parliamentary debates, elocution, creative writing, and poetry.');
 
 INSERT INTO skills (skill_id, activity_id, skill_name, description) VALUES
-(101, 1, 'Bharatanatyam', 'South Indian classical dance form.'),
-(102, 1, 'Kathak', 'North Indian classical dance with rhythmic footwork.'),
-(103, 1, 'Hip-Hop & Street Dance', 'Energetic freestyle urban dance.'),
-(104, 2, 'Carnatic Classical Vocal', 'Traditional South Indian classical singing.'),
-(105, 2, 'Hindustani Classical Vocal', 'North Indian classical vocal tradition.'),
-(106, 2, 'Tabla', 'Twin hand drums used for rhythm and accompaniment.'),
-(107, 2, 'Acoustic Guitar', 'Acoustic guitar for chord progression and solos.'),
-(108, 2, 'Beatboxing', 'Vocal percussion producing rhythmic beats.'),
-(109, 3, 'Street Play (Nukkad Natak)', 'High-energy outdoor theatre for social causes.'),
-(110, 3, 'Mono-Acting & Dialogue Delivery', 'Solo dramatic expression and character switches.'),
-(111, 4, 'Charcoal & Graphite Sketching', 'Monochrome shading and portraiture.'),
-(112, 4, 'Acrylic & Canvas Painting', 'Color-rich visual art.'),
-(113, 5, 'Parliamentary Debating', 'Collegiate debate format with points of information.'),
-(114, 5, 'Poetry Slam & Spoken Word', 'Performance poetry emphasizing rhythm and storytelling.');
+(101, 1, 'Bharatanatyam', 'South Indian classical dance form characterized by fixed upper torso and intricate footwork.'),
+(102, 1, 'Kathak', 'North Indian classical dance form focusing on rhythmic footwork and pirouettes.'),
+(103, 1, 'Hip-Hop & Street Dance', 'Energetic freestyle urban dance with popping, locking, and breaking techniques.'),
+(104, 2, 'Carnatic Classical Vocal', 'Traditional South Indian classical singing with complex raga improvisations.'),
+(105, 2, 'Hindustani Classical Vocal', 'North Indian vocal tradition emphasizing emotional expression and slow raga development.'),
+(106, 2, 'Tabla', 'A pair of twin hand drums of Indian origin used in traditional and fusion performances.'),
+(107, 2, 'Acoustic Guitar', 'Steel-stringed acoustic instrument used for western acoustic and rhythm accompaniment.'),
+(108, 2, 'Beatboxing', 'Vocal percussion producing drum beats, rhythm, and musical sounds using the human mouth.'),
+(109, 3, 'Street Play (Nukkad Natak)', 'High-energy outdoor theatre addressing social causes through loud chants and circular movement.'),
+(110, 3, 'Mono-Acting & Dialogue Delivery', 'Solo dramatic performance showcasing vocal modulation, expression, and character shifts.'),
+(111, 4, 'Charcoal & Graphite Sketching', 'Detailed monochrome drawing and portraiture using charcoal and graphite pencils.'),
+(112, 4, 'Acrylic & Canvas Painting', 'Color-rich visual art using acrylic mediums for expressive landscape and figurative art.'),
+(113, 5, 'Parliamentary Debating', 'Formal collegiate debate format focusing on policy arguments, rebuttal, and persuasive rhetoric.'),
+(114, 5, 'Poetry Slam & Spoken Word', 'Performance poetry emphasizing rhythm, passion, rhyme, and original storytelling.');
 
 INSERT INTO participants (participant_id, full_name, email, phone, college_id, department, year_of_study, bio) VALUES
 (1, 'Aarav Sharma', 'aarav.sharma@college.edu', '9876543210', '1MS21CS001', 'Computer Science', 3, 'Trained Hindustani vocalist and acoustic guitarist.'),

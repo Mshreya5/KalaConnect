@@ -2,9 +2,8 @@ const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
 const path = require('path');
 
-// Load environment variables from project root .env or server .env
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-dotenv.config(); // fallback to current dir .env
+dotenv.config();
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
@@ -19,21 +18,16 @@ const pool = mysql.createPool({
   dateStrings: true
 });
 
-// Test connection helper
 async function testConnection() {
   try {
     const connection = await pool.getConnection();
-    console.log(`[Database] Connected successfully to MySQL database '${process.env.DB_NAME || 'kalaconnect'}' on ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 3306}`);
+    console.log(`[Database] Connected to '${process.env.DB_NAME || 'kalaconnect'}' on ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 3306}`);
     connection.release();
     return true;
   } catch (err) {
-    console.warn(`[Database Warning] Could not connect to MySQL: ${err.message}`);
-    console.warn(`[Database Warning] Please verify that MySQL is running and credentials in .env are correct.`);
+    console.warn(`[Database] Could not connect: ${err.message}`);
     return false;
   }
 }
 
-module.exports = {
-  pool,
-  testConnection
-};
+module.exports = { pool, testConnection };

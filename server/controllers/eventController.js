@@ -1,25 +1,13 @@
 const { pool } = require('../config/db');
 
-// List events with filters
 exports.getAllEvents = async (req, res) => {
   const { status, organizer_id, upcoming } = req.query;
   let sql = `
     SELECT 
-      e.event_id,
-      e.event_name,
-      e.event_date,
-      e.start_time,
-      e.end_time,
-      e.venue,
-      e.status,
-      e.description,
-      e.created_at,
-      o.organizer_id,
-      o.full_name AS organizer_name,
-      o.club_or_dept,
-      ca.activity_id,
-      ca.activity_name AS cultural_theme,
-      ca.category AS activity_category,
+      e.event_id, e.event_name, e.event_date, e.start_time, e.end_time,
+      e.venue, e.status, e.description, e.created_at,
+      o.organizer_id, o.full_name AS organizer_name, o.club_or_dept,
+      ca.activity_id, ca.activity_name AS cultural_theme, ca.category AS activity_category,
       COUNT(ptn.participation_id) AS total_registrations,
       COUNT(CASE WHEN ptn.status = 'Confirmed' THEN 1 END) AS confirmed_participants
     FROM events e
@@ -30,17 +18,9 @@ exports.getAllEvents = async (req, res) => {
   `;
   const params = [];
 
-  if (status) {
-    sql += ` AND e.status = ?`;
-    params.push(status);
-  }
-  if (organizer_id) {
-    sql += ` AND e.organizer_id = ?`;
-    params.push(organizer_id);
-  }
-  if (upcoming === 'true') {
-    sql += ` AND (e.event_date >= CURRENT_DATE OR e.status = 'Scheduled')`;
-  }
+  if (status) { sql += ` AND e.status = ?`; params.push(status); }
+  if (organizer_id) { sql += ` AND e.organizer_id = ?`; params.push(organizer_id); }
+  if (upcoming === 'true') { sql += ` AND (e.event_date >= CURRENT_DATE OR e.status = 'Scheduled')`; }
 
   sql += `
     GROUP BY e.event_id, e.event_name, e.event_date, e.start_time, e.end_time,
@@ -53,25 +33,19 @@ exports.getAllEvents = async (req, res) => {
     const [rows] = await pool.query(sql, params);
     res.json({ success: true, count: rows.length, data: rows });
   } catch (err) {
-    console.error('Error in getAllEvents:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// Get single event by ID with requirements and summary
 exports.getEventById = async (req, res) => {
   const { id } = req.params;
   try {
     const [events] = await pool.query(`
       SELECT 
         e.*,
-        o.full_name AS organizer_name,
-        o.email AS organizer_email,
-        o.phone AS organizer_phone,
-        o.club_or_dept,
-        o.designation,
-        ca.activity_name AS cultural_theme,
-        ca.category AS activity_category
+        o.full_name AS organizer_name, o.email AS organizer_email,
+        o.phone AS organizer_phone, o.club_or_dept, o.designation,
+        ca.activity_name AS cultural_theme, ca.category AS activity_category
       FROM events e
       INNER JOIN organizers o ON e.organizer_id = o.organizer_id
       LEFT JOIN cultural_activities ca ON e.activity_id = ca.activity_id
@@ -82,16 +56,10 @@ exports.getEventById = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Event not found' });
     }
 
-    // Fetch requirements with confirmed count and deficit
     const [requirements] = await pool.query(`
       SELECT 
-        er.requirement_id,
-        er.event_id,
-        er.skill_id,
-        s.skill_name,
-        ca.activity_name,
-        er.required_count,
-        er.notes,
+        er.requirement_id, er.event_id, er.skill_id,
+        s.skill_name, ca.activity_name, er.required_count, er.notes,
         COUNT(CASE WHEN ptn.status = 'Confirmed' THEN 1 END) AS confirmed_count,
         GREATEST(0, er.required_count - COUNT(CASE WHEN ptn.status = 'Confirmed' THEN 1 END)) AS deficit
       FROM event_requirements er
@@ -104,7 +72,6 @@ exports.getEventById = async (req, res) => {
       ORDER BY s.skill_name ASC
     `, [id]);
 
-    // Fetch participation counts
     const [counts] = await pool.query(`
       SELECT 
         COUNT(participation_id) AS total_registrations,
@@ -113,100 +80,43 @@ exports.getEventById = async (req, res) => {
         COUNT(CASE WHEN status = 'Registered' THEN 1 END) AS pending,
         COUNT(CASE WHEN status = 'Attended' THEN 1 END) AS attended,
         COUNT(CASE WHEN status = 'Cancelled' THEN 1 END) AS cancelled
-      FROM participation
-      WHERE event_id = ?
+      FROM participation WHERE event_id = ?
     `, [id]);
 
-    res.json({
-      success: true,
-      data: {
-        ...events[0],
-        requirements,
-        participation_summary: counts[0] || {}
-      }
-    });
+    res.json({ success: true, data: { ...events[0], requirements, participation_summary: counts[0] || {} } });
   } catch (err) {
-    console.error('Error in getEventById:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// Create new event
 exports.createEvent = async (req, res) => {
-  const {
-    organizer_id,
-    activity_id,
-    event_name,
-    event_date,
-    start_time,
-    end_time,
-    venue,
-    status,
-    description
-  } = req.body;
+  const { organizer_id, activity_id, event_name, event_date, start_time, end_time, venue, status, description } = req.body;
 
   if (!organizer_id || !event_name || !event_date || !start_time || !end_time || !venue) {
-    return res.status(400).json({
-      success: false,
-      error: 'organizer_id, event_name, event_date, start_time, end_time, and venue are required.'
-    });
+    return res.status(400).json({ success: false, error: 'organizer_id, event_name, event_date, start_time, end_time, and venue are required.' });
   }
-
-  // Validate end_time > start_time
   if (end_time <= start_time) {
-    return res.status(400).json({
-      success: false,
-      error: 'Event end_time must be strictly after start_time.'
-    });
+    return res.status(400).json({ success: false, error: 'Event end_time must be strictly after start_time.' });
   }
 
   try {
     const [result] = await pool.query(`
       INSERT INTO events (organizer_id, activity_id, event_name, event_date, start_time, end_time, venue, status, description)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      organizer_id,
-      activity_id || null,
-      event_name,
-      event_date,
-      start_time,
-      end_time,
-      venue,
-      status || 'Scheduled',
-      description || null
-    ]);
+    `, [organizer_id, activity_id || null, event_name, event_date, start_time, end_time, venue, status || 'Scheduled', description || null]);
 
-    res.status(201).json({
-      success: true,
-      message: 'Event created successfully',
-      event_id: result.insertId
-    });
+    res.status(201).json({ success: true, message: 'Event created successfully', event_id: result.insertId });
   } catch (err) {
-    console.error('Error in createEvent:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// Update event
 exports.updateEvent = async (req, res) => {
   const { id } = req.params;
-  const {
-    organizer_id,
-    activity_id,
-    event_name,
-    event_date,
-    start_time,
-    end_time,
-    venue,
-    status,
-    description
-  } = req.body;
+  const { organizer_id, activity_id, event_name, event_date, start_time, end_time, venue, status, description } = req.body;
 
   if (end_time && start_time && end_time <= start_time) {
-    return res.status(400).json({
-      success: false,
-      error: 'Event end_time must be strictly after start_time.'
-    });
+    return res.status(400).json({ success: false, error: 'Event end_time must be strictly after start_time.' });
   }
 
   try {
@@ -222,31 +132,17 @@ exports.updateEvent = async (req, res) => {
           status = COALESCE(?, status),
           description = COALESCE(?, description)
       WHERE event_id = ?
-    `, [
-      organizer_id,
-      activity_id,
-      event_name,
-      event_date,
-      start_time,
-      end_time,
-      venue,
-      status,
-      description,
-      id
-    ]);
+    `, [organizer_id, activity_id, event_name, event_date, start_time, end_time, venue, status, description, id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, error: 'Event not found' });
     }
-
     res.json({ success: true, message: 'Event updated successfully' });
   } catch (err) {
-    console.error('Error in updateEvent:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// Delete event
 exports.deleteEvent = async (req, res) => {
   const { id } = req.params;
   try {
@@ -256,24 +152,17 @@ exports.deleteEvent = async (req, res) => {
     }
     res.json({ success: true, message: 'Event deleted successfully' });
   } catch (err) {
-    console.error('Error in deleteEvent:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// Event Requirements
 exports.getEventRequirements = async (req, res) => {
   const { id } = req.params;
   try {
     const [rows] = await pool.query(`
       SELECT 
-        er.requirement_id,
-        er.event_id,
-        er.skill_id,
-        s.skill_name,
-        ca.activity_name,
-        er.required_count,
-        er.notes,
+        er.requirement_id, er.event_id, er.skill_id,
+        s.skill_name, ca.activity_name, er.required_count, er.notes,
         COUNT(CASE WHEN ptn.status = 'Confirmed' THEN 1 END) AS confirmed_count,
         GREATEST(0, er.required_count - COUNT(CASE WHEN ptn.status = 'Confirmed' THEN 1 END)) AS deficit
       FROM event_requirements er
@@ -287,44 +176,31 @@ exports.getEventRequirements = async (req, res) => {
     `, [id]);
     res.json({ success: true, data: rows });
   } catch (err) {
-    console.error('Error in getEventRequirements:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// Add or update an event skill requirement
 exports.addEventRequirement = async (req, res) => {
   const { id } = req.params;
   const { skill_id, required_count, notes } = req.body;
 
   if (!skill_id || !required_count || required_count <= 0) {
-    return res.status(400).json({
-      success: false,
-      error: 'skill_id and a positive required_count are required.'
-    });
+    return res.status(400).json({ success: false, error: 'skill_id and a positive required_count are required.' });
   }
 
   try {
     const [result] = await pool.query(`
       INSERT INTO event_requirements (event_id, skill_id, required_count, notes)
       VALUES (?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE 
-        required_count = VALUES(required_count),
-        notes = VALUES(notes)
+      ON DUPLICATE KEY UPDATE required_count = VALUES(required_count), notes = VALUES(notes)
     `, [id, skill_id, required_count, notes || null]);
 
-    res.status(201).json({
-      success: true,
-      message: 'Event requirement saved successfully',
-      requirement_id: result.insertId
-    });
+    res.status(201).json({ success: true, message: 'Event requirement saved successfully', requirement_id: result.insertId });
   } catch (err) {
-    console.error('Error in addEventRequirement:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// Delete requirement
 exports.deleteEventRequirement = async (req, res) => {
   const { reqId } = req.params;
   try {
@@ -334,7 +210,6 @@ exports.deleteEventRequirement = async (req, res) => {
     }
     res.json({ success: true, message: 'Requirement removed successfully' });
   } catch (err) {
-    console.error('Error in deleteEventRequirement:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };

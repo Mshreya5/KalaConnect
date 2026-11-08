@@ -1,3 +1,6 @@
+CREATE DATABASE IF NOT EXISTS kalaconnect;
+USE kalaconnect;
+
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS participation;
@@ -122,7 +125,7 @@ CREATE TABLE participation (
     participant_id INT NOT NULL,
     event_id INT NOT NULL,
     role VARCHAR(50) NOT NULL DEFAULT 'Performer',
-    status ENUM('Registered','Shortlisted','Confirmed','Attended','Cancelled') NOT NULL DEFAULT 'Registered',
+    status ENUM('Registered', 'Shortlisted', 'Confirmed', 'Attended', 'Cancelled') NOT NULL DEFAULT 'Registered',
     feedback_or_score VARCHAR(100),
     registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_participation_participant

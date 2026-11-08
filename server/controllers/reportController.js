@@ -1,23 +1,13 @@
 const { pool } = require('../config/db');
 
-// Q1: Upcoming events with organizer information
 exports.getUpcomingEvents = async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT 
-        e.event_id,
-        e.event_name,
-        e.event_date,
-        e.start_time,
-        e.end_time,
-        e.venue,
-        e.status AS event_status,
-        o.organizer_id,
-        o.full_name AS organizer_name,
-        o.email AS organizer_email,
-        o.phone AS organizer_phone,
-        o.club_or_dept AS organizing_body,
-        o.designation AS organizer_title,
+        e.event_id, e.event_name, e.event_date, e.start_time, e.end_time,
+        e.venue, e.status AS event_status,
+        o.organizer_id, o.full_name AS organizer_name, o.email AS organizer_email,
+        o.phone AS organizer_phone, o.club_or_dept AS organizing_body, o.designation AS organizer_title,
         COALESCE(ca.activity_name, 'Inter-Disciplinary / General') AS cultural_theme
       FROM events e
       INNER JOIN organizers o ON e.organizer_id = o.organizer_id
@@ -27,23 +17,17 @@ exports.getUpcomingEvents = async (req, res) => {
     `);
     res.json({ success: true, count: rows.length, data: rows });
   } catch (err) {
-    console.error('Error in getUpcomingEvents:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// Q3: Unfulfilled event requirements (Deficit report)
 exports.getDeficitReport = async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT 
-        e.event_id,
-        e.event_name,
-        e.event_date,
-        o.full_name AS organizer_name,
-        o.club_or_dept,
-        s.skill_id,
-        s.skill_name AS required_skill,
+        e.event_id, e.event_name, e.event_date,
+        o.full_name AS organizer_name, o.club_or_dept,
+        s.skill_id, s.skill_name AS required_skill,
         er.required_count AS target_headcount,
         COUNT(CASE WHEN ptn.status = 'Confirmed' THEN 1 END) AS confirmed_headcount,
         (er.required_count - COUNT(CASE WHEN ptn.status = 'Confirmed' THEN 1 END)) AS deficit_headcount
@@ -54,29 +38,21 @@ exports.getDeficitReport = async (req, res) => {
       LEFT JOIN participation ptn ON e.event_id = ptn.event_id
       LEFT JOIN participant_skills ps ON ptn.participant_id = ps.participant_id AND ps.skill_id = s.skill_id
       WHERE e.status = 'Scheduled'
-      GROUP BY 
-        e.event_id, e.event_name, e.event_date, o.full_name, o.club_or_dept, 
-        s.skill_id, s.skill_name, er.required_count
+      GROUP BY e.event_id, e.event_name, e.event_date, o.full_name, o.club_or_dept, s.skill_id, s.skill_name, er.required_count
       HAVING deficit_headcount > 0
       ORDER BY deficit_headcount DESC, e.event_date ASC
     `);
     res.json({ success: true, count: rows.length, data: rows });
   } catch (err) {
-    console.error('Error in getDeficitReport:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// Q4: Participant counts grouped by event
 exports.getEventParticipantCounts = async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT 
-        e.event_id,
-        e.event_name,
-        e.event_date,
-        e.venue,
-        e.status AS event_status,
+        e.event_id, e.event_name, e.event_date, e.venue, e.status AS event_status,
         o.full_name AS organizer_name,
         COUNT(ptn.participation_id) AS total_registrations,
         COUNT(CASE WHEN ptn.status = 'Confirmed' THEN 1 END) AS confirmed_count,
@@ -91,20 +67,15 @@ exports.getEventParticipantCounts = async (req, res) => {
     `);
     res.json({ success: true, count: rows.length, data: rows });
   } catch (err) {
-    console.error('Error in getEventParticipantCounts:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// Q5 & Q4: Organizer workload & event summary
 exports.getOrganizerSummary = async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT 
-        o.organizer_id,
-        o.full_name,
-        o.club_or_dept,
-        o.designation,
+        o.organizer_id, o.full_name, o.club_or_dept, o.designation,
         COUNT(e.event_id) AS total_events_organized,
         SUM(CASE WHEN e.status = 'Completed' THEN 1 ELSE 0 END) AS completed_events,
         SUM(CASE WHEN e.status = 'Scheduled' THEN 1 ELSE 0 END) AS upcoming_events,
@@ -117,22 +88,16 @@ exports.getOrganizerSummary = async (req, res) => {
     `);
     res.json({ success: true, count: rows.length, data: rows });
   } catch (err) {
-    console.error('Error in getOrganizerSummary:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// Q6: Popular events ranked by participation
 exports.getPopularEvents = async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT 
-        e.event_id,
-        e.event_name,
-        e.event_date,
-        e.venue,
-        o.full_name AS organizer_name,
-        o.club_or_dept,
+        e.event_id, e.event_name, e.event_date, e.venue,
+        o.full_name AS organizer_name, o.club_or_dept,
         COUNT(ptn.participation_id) AS total_registrations,
         COUNT(CASE WHEN ptn.status = 'Confirmed' THEN 1 END) AS confirmed_participants,
         DENSE_RANK() OVER (ORDER BY COUNT(ptn.participation_id) DESC) AS popularity_rank
@@ -144,12 +109,10 @@ exports.getPopularEvents = async (req, res) => {
     `);
     res.json({ success: true, count: rows.length, data: rows });
   } catch (err) {
-    console.error('Error in getPopularEvents:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// Departmental distribution
 exports.getDepartmentDistribution = async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -165,12 +128,10 @@ exports.getDepartmentDistribution = async (req, res) => {
     `);
     res.json({ success: true, count: rows.length, data: rows });
   } catch (err) {
-    console.error('Error in getDepartmentDistribution:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// High-level system KPI overview for dashboard top banner
 exports.getDashboardStats = async (req, res) => {
   try {
     const [eventCount] = await pool.query(`SELECT COUNT(*) AS total_events FROM events`);
@@ -202,7 +163,6 @@ exports.getDashboardStats = async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Error in getDashboardStats:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };

@@ -9,7 +9,6 @@ const lookupRoutes = require('./routes/lookupRoutes');
 
 const app = express();
 
-// Middleware
 app.use(cors({
   origin: process.env.CLIENT_URL || '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -17,14 +16,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// API Routes
 app.use('/api/organizers', organizerRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/participation', participationRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api', lookupRoutes);
 
-// Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',
@@ -33,7 +30,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Central error handler
 app.use((err, req, res, next) => {
   console.error('[Server Error]', err.stack);
   res.status(500).json({

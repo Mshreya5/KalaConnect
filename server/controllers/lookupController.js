@@ -1,20 +1,14 @@
 const { pool } = require('../config/db');
 
-// List cultural activities
 exports.getCulturalActivities = async (req, res) => {
   try {
-    const [rows] = await pool.query(`
-      SELECT activity_id, activity_name, category, description 
-      FROM cultural_activities 
-      ORDER BY category, activity_name
-    `);
+    const [rows] = await pool.query(`SELECT activity_id, activity_name, category, description FROM cultural_activities ORDER BY category, activity_name`);
     res.json({ success: true, data: rows });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// List skills with activity names
 exports.getSkills = async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -29,13 +23,11 @@ exports.getSkills = async (req, res) => {
   }
 };
 
-// List participants
 exports.getParticipants = async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT participant_id, full_name, email, phone, college_id, department, year_of_study
-      FROM participants
-      ORDER BY full_name ASC
+      FROM participants ORDER BY full_name ASC
     `);
     res.json({ success: true, data: rows });
   } catch (err) {

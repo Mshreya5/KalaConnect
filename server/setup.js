@@ -1,9 +1,3 @@
-/**
- * KalaConnect — One-shot Database Setup Script
- * Runs: schema → sample_data → trigger → procedures → views
- * Usage: node server/setup.js
- */
-
 const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
 const path = require('path');
@@ -15,7 +9,6 @@ dotenv.config();
 const DB = process.env.DB_NAME || 'kalaconnect';
 
 async function run() {
-  // Connect without a database first to create it
   const root = await mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '3306', 10),
@@ -25,12 +18,10 @@ async function run() {
   });
 
   console.log('[Setup] Connected to MySQL.');
-
   await root.query(`CREATE DATABASE IF NOT EXISTS \`${DB}\``);
   console.log(`[Setup] Database '${DB}' ready.`);
   await root.end();
 
-  // Now connect with the database
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '3306', 10),
@@ -42,17 +33,14 @@ async function run() {
 
   const dbDir = path.resolve(__dirname, '../database');
 
-  // 1. Schema
   const schema = fs.readFileSync(path.join(dbDir, 'schema.sql'), 'utf8');
   await conn.query(schema);
   console.log('[Setup] Schema created (9 tables).');
 
-  // 2. Sample data
   const data = fs.readFileSync(path.join(dbDir, 'sample_data.sql'), 'utf8');
   await conn.query(data);
   console.log('[Setup] Sample data loaded.');
 
-  // 3. Trigger (strip DELIMITER syntax — not valid in mysql2)
   await conn.query(`DROP TRIGGER IF EXISTS trg_validate_participant_availability_before_booking`);
   await conn.query(`
     CREATE TRIGGER trg_validate_participant_availability_before_booking
@@ -100,7 +88,6 @@ async function run() {
   `);
   console.log('[Setup] Trigger deployed.');
 
-  // 4. Stored Procedure 1
   await conn.query(`DROP PROCEDURE IF EXISTS sp_match_available_talents_for_event`);
   await conn.query(`
     CREATE PROCEDURE sp_match_available_talents_for_event(IN p_event_id INT)
@@ -174,9 +161,8 @@ async function run() {
         p.full_name ASC;
     END
   `);
-  console.log('[Setup] Stored Procedure 1 (sp_match_available_talents_for_event) deployed.');
+  console.log('[Setup] Stored Procedure 1 deployed.');
 
-  // 5. Stored Procedure 2
   await conn.query(`DROP PROCEDURE IF EXISTS sp_register_event_participation`);
   await conn.query(`
     CREATE PROCEDURE sp_register_event_participation(
@@ -265,12 +251,11 @@ async function run() {
       END IF;
     END
   `);
-  console.log('[Setup] Stored Procedure 2 (sp_register_event_participation) deployed.');
+  console.log('[Setup] Stored Procedure 2 deployed.');
 
-  // 6. Views
   const views = fs.readFileSync(path.join(dbDir, 'views.sql'), 'utf8');
   await conn.query(views);
-  console.log('[Setup] Views created (3 views).');
+  console.log('[Setup] Views created.');
 
   await conn.end();
 
