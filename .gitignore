@@ -36,3 +36,10 @@ Desktop.ini
 *.bak
 *.orig
 database/backups/
+
+# Local test/log files
+server_test.log
+*.log
+
+# Claude agent config (internal tooling)
+.claude/
