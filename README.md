@@ -1,310 +1,471 @@
-# KalaConnect — Cultural Talent, Availability & Event Coordination System
+# KalaConnect – Cultural Talent, Availability & Event Coordination System
 
-A centralized College DBMS Mini-Project designed to streamline cultural artist discovery, availability scheduling, event requirements matching, and participation tracking across collegiate cultural fests and clubs.
-
----
-
-## 1. Project Overview & Motivation
-
-In college campuses, organizing cultural fests (music competitions, dance fests, dramatics, street plays, literary debates, fine arts exhibitions) often suffers from:
-- **Fragmented Talent Records:** Student talents are scattered across paper forms, WhatsApp groups, and spreadsheets.
-- **Scheduling Conflicts:** Organizers frequently double-book performers who have conflicting class/lab schedules or prior rehearsals.
-- **Mismatch in Requirements:** Event managers struggle to identify exact skill proficiencies (e.g., Classical Carnatic Vocal vs. Western Pop Vocal).
-- **Lack of Central Coordination:** Tracking whether student participants actually showed up, registered, or won awards is cumbersome.
-
-**KalaConnect** solves this by establishing a robust, 3NF-normalized relational database backplane that connects students (**Participants**), event coordinators (**Organizers**), art forms (**Cultural Activities & Skills**), scheduling (**Availability**), and execution (**Events, Requirements & Participation**).
+> **A Complete Full-Stack DBMS Mini-Project for College Submission & Viva Demonstration**  
+> Built with React (Vite, Tailwind CSS), Node.js (Express), MySQL Community Server (mysql2), and Advanced SQL (Triggers, Stored Procedures, Views & Transactions).
 
 ---
 
-## 2. Tech Stack
-
-- **Database Engine:** MySQL Community Server 8.0+
-- **Database Management Tool:** MySQL Workbench
-- **Backend API:** Node.js with Express.js (`mysql2/promise` RESTful API architecture)
-- **Frontend Client:** React 18+ with Vite & Lucide Icons
-- **Version Control:** Git & GitHub
+## 1. Project Title
+**KalaConnect – Cultural Talent, Availability & Event Coordination System**
 
 ---
 
-## 3. Team Member Division of Responsibilities
+## 2. Project Overview
+**KalaConnect** is a centralized campus talent discovery and cultural event coordination web application designed for collegiate institutions. In many universities and colleges, cultural talent (musicians, dancers, dramatists, debaters, fine artists) is scattered across departments and academic years. Event coordinators, student club leaders, and faculty cultural committees struggle to find students with specific skills who are actually free on rehearsal and event dates.
 
-To ensure balanced academic contribution, the system is partitioned into two clear modules sharing a unified database schema:
-
-| Module / Scope | Member 1 (Lead: Talent & Scheduling) | Member 2 (Lead: Events & Coordination) |
-| :--- | :--- | :--- |
-| **Entities & Tables** | `participants`, `cultural_activities`, `skills`, `participant_skills`, `availability` | `organizers`, `events`, `event_requirements`, `participation` |
-| **SQL Queries** | Talent catalog filtering, skill proficiency lookups, availability conflict detection, activity aggregations (`queries_member1.sql`) | Upcoming events, participant rosters, requirement deficit analysis, organizer workload, popular event ranking, matching talents (`queries_member2.sql`) |
-| **Advanced Programmability** | Availability validation & conflict prevention **Trigger** (`trigger.sql`) | Automated event talent matching & registration **Stored Procedures** (`procedure.sql`) & comprehensive test suite (`test_member2.sql`) |
-| **Full Stack Implementation** | Student profile & talent intake module | Organizer dashboard, event manager, skill requirements builder, talent matcher UI & REST APIs |
-| **Shared Artifacts** | Unified 9-table schema (`schema.sql`), Database Views (`views.sql`), Sample dataset (`sample_data.sql`), Inspection scripts (`inspect_kalaconnect.sql`) | Same shared schema, views, sample data, and joint schema integrity review |
+KalaConnect bridges this gap by maintaining a verified cultural talent registry alongside student availability time slots. Event organizers can schedule events, declare headcount requirements for specific art forms, and run automated database-driven talent matching to recruit conflict-free performers.
 
 ---
 
-## 4. Database Architecture (The 9 Core Tables)
+## 3. Problem Statement
+In collegiate environments:
+1. **Scattered Information**: Student talents and cultural proficiencies are not recorded systematically. Organizers rely on word-of-mouth or last-minute messaging to find performers.
+2. **Scheduling Conflicts**: Students frequently get double-booked across simultaneous rehearsals or conflicting college fests.
+3. **Requirement Deficits**: Event coordinators struggle to track how many performers have been confirmed versus how many are still required for an event, leading to program delays.
+4. **Lack of Validation**: Overlapping availability entries and clashing stage assignments often cause chaos on event days.
 
-The system relies on nine strictly coordinated tables adhering to 3rd Normal Form (3NF):
+**KalaConnect** solves these issues using a **3NF-normalized relational database**, **database triggers** that prevent overlapping availability and conflicting bookings, and a **stored procedure** that automates candidate talent matching.
 
-```mermaid
-erDiagram
-    ORGANIZERS ||--o{ EVENTS : organizes
-    CULTURAL_ACTIVITIES ||--o{ SKILLS : categorizes
-    CULTURAL_ACTIVITIES ||--o{ EVENTS : categorizes
-    SKILLS ||--o{ PARTICIPANT_SKILLS : possessed_by
-    PARTICIPANTS ||--o{ PARTICIPANT_SKILLS : possesses
-    PARTICIPANTS ||--o{ AVAILABILITY : registers
-    PARTICIPANTS ||--o{ PARTICIPATION : joins
-    EVENTS ||--o{ PARTICIPATION : logs
-    EVENTS ||--o{ EVENT_REQUIREMENTS : requires
-    SKILLS ||--o{ EVENT_REQUIREMENTS : needed_in
+---
+
+## 4. Objectives
+- **Centralize Campus Talent**: Maintain structured profiles of student performers, including proficiency levels (Beginner, Intermediate, Advanced, Professional), experience, and portfolios.
+- **Manage Student Availability**: Allow participants to declare their free time slots with automated trigger rejection for invalid or overlapping intervals.
+- **Streamline Event Requirements**: Allow organizers to define precise skill headcounts (e.g., 2 Classical Vocalists, 3 Bharatanatyam Dancers, 8 Street Play Actors) for each event.
+- **Automate Talent Matching**: Encapsulate matching logic inside a MySQL Stored Procedure (`sp_match_available_talents_for_event`) that matches skills, verifies availability, and excludes double-booked students.
+- **Track Participation Lifecycle**: Support registration, shortlisting, confirmation (approval), attendance, and cancellation with scheduling conflict enforcement.
+- **Provide Actionable Analytics**: Generate real-time reports on talent requirement deficits, popular events, and departmental engagement.
+
+---
+
+## 5. Key Features
+
+### Participant Hub (Member 1)
+- **Student Profile Management**: Full CRUD operations for student participants (USN/Roll No, department, year of study, contact details, bio).
+- **Cultural Activities & Skills Catalog**: Hierarchical exploration of cultural domains (Performing Arts, Musical Arts, Visual Arts, Literary Arts) and individual skills.
+- **Skill Proficiency & Portfolio Tracking**: M:N junction table mapping participants to skills with proficiency ratings and years of experience.
+- **Availability Slot Management**: Calendar slot declaration with strict database trigger enforcement preventing overlapping slots for the same participant on the same date.
+- **Talent Search & Filtering**: Multi-criteria search by skill, category, minimum proficiency, and specific date/time availability intervals.
+
+### Organizer & Event Coordination Hub (Member 2)
+- **Organizer Profiles**: Cultural committee and club coordinator management.
+- **Event Scheduling & Requirements**: Event creation with date, time window, venue, and cultural theme, linked to specific skill quotas.
+- **Automated Talent Matcher**: Invokes the `sp_match_available_talents_for_event` stored procedure to rank eligible, available performers with zero scheduling conflicts.
+- **Participation Workflow & Approvals**: End-to-end request management with statuses: `Registered` (Pending) &rarr; `Shortlisted` &rarr; `Confirmed` (Approved) &rarr; `Attended` / `Cancelled`.
+- **Deficit & Analytics Reports**: Real-time identification of unfilled skill quotas across scheduled events, department distribution, and event popularity ranking.
+
+---
+
+## 6. Technology Stack
+
+| Layer | Technologies Used | Description |
+|---|---|---|
+| **Frontend** | React 19, Vite 8, Tailwind CSS, React Router DOM 7 | Responsive, modern Single-Page Application (SPA) |
+| **Backend** | Node.js (v18+/v20+/v24+), Express.js 4 | RESTful API server with modular routing and MVC architecture |
+| **Database** | MySQL Community Server 8.0+, `mysql2/promise` | 3NF Relational Database with InnoDB engine, Foreign Keys, Triggers, and Stored Procedures |
+| **Tools** | PowerShell, Git, Node.js CLI | Development, migrations, and automated testing |
+
+---
+
+## 7. System Architecture
+
+```
++-------------------------------------------------------------------------+
+|                        Client Layer (React / Vite)                      |
+|  - Member 1: Participants, Skills, Availability, Directory, Dashboard   |
+|  - Member 2: Events, Requirements, Talent Matcher, Roster, Reports     |
++------------------------------------+------------------------------------+
+                                     |  HTTP REST Calls (JSON)
+                                     v  (Proxy port 5173 -> 5000)
++-------------------------------------------------------------------------+
+|                    Application Server Layer (Express.js)                |
+|  - Middleware: CORS, express.json, Error Handlers                       |
+|  - Routes: /api/participants, /api/events, /api/talents, /api/reports   |
+|  - Controllers: Parameterized SQL, Validation, Business Logic           |
++------------------------------------+------------------------------------+
+                                     |  mysql2 Connection Pool
+                                     |  (TCP localhost:3306)
+                                     v
++-------------------------------------------------------------------------+
+|                       Database Layer (MySQL 8.0+)                       |
+|  - 9 Relational Tables (InnoDB, FK Constraints, Unique Keys)            |
+|  - Triggers: Availability Overlap Check & Booking Clash Prevention      |
+|  - Stored Procedures: Talent Matching & Transactional Registration      |
+|  - Views: Fulfillment Status, Talent Directory, Participant Summary     |
++-------------------------------------------------------------------------+
 ```
 
-### Table Summary:
-1. **`participants`**: Student details (ID, full name, email, phone, college roll/USN, department, year of study).
-2. **`organizers`**: Event coordinator details (ID, full name, email, phone, club/department name, designation).
-3. **`cultural_activities`**: Broad artistic categories (Performing Arts, Visual Arts, Literary Arts, Musical Arts).
-4. **`skills`**: Granular talents (e.g., Bharatanatyam, Beatboxing, Charcoal Sketching) classified under an activity.
-5. **`participant_skills`**: **Many-to-Many junction table** connecting participants to their skills with proficiency levels and years of experience.
-6. **`events`**: Scheduled cultural competitions, stage showcases, and fests organized by club leads.
-7. **`event_requirements`**: Specification of required skills and target participant counts per event.
-8. **`availability`**: Time slots and calendar dates when participants are free, preventing double-booking.
-9. **`participation`**: **Many-to-Many junction table** recording actual event registrations, performer roles, statuses, and feedback.
+---
+
+## 8. Database Design (9 Canonical Tables)
+
+The database schema is strictly normalized to **Third Normal Form (3NF)** with referential integrity constraints (`ON UPDATE CASCADE`, `ON DELETE CASCADE/RESTRICT`):
+
+1. **`participants`** (Member 1): Stores student demographics (`participant_id`, `full_name`, `email`, `phone`, `college_id` [USN], `department`, `year_of_study`, `bio`).
+2. **`organizers`** (Member 2): Stores club/department coordinators (`organizer_id`, `full_name`, `email`, `phone`, `club_or_dept`, `designation`).
+3. **`cultural_activities`** (Member 1): Master catalog of cultural domains (`activity_id`, `activity_name`, `category`, `description`).
+4. **`skills`** (Member 1): Specific art disciplines (`skill_id`, `activity_id` &rarr; `cultural_activities`, `skill_name`, `description`).
+5. **`participant_skills`** (Member 1): M:N bridge table (`participant_id` &rarr; `participants`, `skill_id` &rarr; `skills`, `proficiency_level`, `years_of_experience`, `portfolio_url`).
+6. **`events`** (Member 2): Scheduled cultural events (`event_id`, `organizer_id` &rarr; `organizers`, `activity_id` &rarr; `cultural_activities`, `event_name`, `event_date`, `start_time`, `end_time`, `venue`, `status`, `description`).
+7. **`event_requirements`** (Member 2): Skill quotas per event (`requirement_id`, `event_id` &rarr; `events`, `skill_id` &rarr; `skills`, `required_count`, `notes`).
+8. **`availability`** (Member 1): Participant free/busy intervals (`availability_id`, `participant_id` &rarr; `participants`, `available_date`, `start_time`, `end_time`, `status`).
+9. **`participation`** (Member 2): M:N event participation lifecycle (`participation_id`, `participant_id` &rarr; `participants`, `event_id` &rarr; `events`, `role`, `status`, `feedback_or_score`, `registered_at`).
+
+### Entity-Relationship (ER) Overview
+```
++--------------+        1:N        +--------+        1:N        +--------------------+
+|  organizers  | ----------------- | events | ----------------- | event_requirements |
++--------------+                   +---+----+                   +---------+----------+
+                                       |                                  |
+                                       | 1:N                              | N:1
+                                       v                                  v
++------------------+     M:N       +---------------+            +--------------------+
+|   participants   | ------------- | participation |            |       skills       |
++--------+---------+               +---------------+            +---------+----------+
+         |                                                                |
+         | 1:N                                                            | N:1
+         +--------------------+                                           |
+         |                    |                                           v
+         v                    v                                 +--------------------+
++------------------+   +--------------+                         |cultural_activities |
+|participant_skills|   | availability |                         +--------------------+
++------------------+   +--------------+
+```
 
 ---
 
-## 5. Database Normalization (1NF to 3NF) Explained
+## 9. Modules & Team Contributions
 
-1. **First Normal Form (1NF) — Atomicity & No Repeating Groups:**
-   - No multi-valued attributes: A participant's multiple talents are not stored as comma-separated text (`"Singing, Dancing"`). Instead, each talent is an individual atomic foreign-key record in junction table `participant_skills`.
-   - Every table has an atomic, immutable Primary Key.
-2. **Second Normal Form (2NF) — Full Functional Dependency:**
-   - Eliminates partial dependencies on composite keys. In `participant_skills(participant_id, skill_id)`, attributes like `proficiency_level` and `years_of_experience` depend on the combination of *both* the participant and the specific skill.
-   - Student personal details (like `department`) are kept in `participants`, not repeated in `participant_skills`.
-3. **Third Normal Form (3NF) — Elimination of Transitive Dependencies:**
-   - Non-key attributes depend solely on the primary key ($X \rightarrow Y$ where $X$ is a superkey).
-   - In `skills`, we reference `activity_id` rather than storing `activity_name` directly alongside `skill_name`, eliminating transitive dependencies (`skill_id` $\rightarrow$ `activity_id` $\rightarrow$ `activity_name`).
+### Member 1 Scope: Participant & Talent Management
+- Participant profile management and registration.
+- Cultural activities and skills hierarchy catalog.
+- Participant skills mapping, proficiency levels, and experience tracking.
+- Availability calendar declarations.
+- Database Triggers: `trg_validate_availability_before_insert` and `trg_validate_availability_before_update` (rejects overlapping time slots).
+- Talent search, filter queries, and Member 1 Dashboard KPIs.
+
+### Member 2 Scope: Events & Coordination
+- Organizer profiles and campus cultural clubs management.
+- Event scheduling, venue booking, and skill quota requirements management.
+- Stored Procedure: `sp_match_available_talents_for_event` (automated skill & availability matching).
+- Stored Procedure: `sp_register_event_participation` (transactional registration with requirement verification).
+- Database Trigger: `trg_validate_participant_availability_before_booking` (prevents double-booking and booking busy students).
+- Participation status management (Registered &rarr; Shortlisted &rarr; Confirmed &rarr; Attended &rarr; Cancelled).
+- Analytical reports (Deficit analysis, Popular events ranking, Department distribution).
 
 ---
 
-## 6. Project Directory Structure
-
-```text
+## 10. Project Folder Structure
+```
 KalaConnect/
-├── .env.example              # Environment variables template
-├── .env                      # Local system credentials (ignored by git)
-├── .gitignore                # Git ignore rules
-├── package.json              # Root npm orchestration scripts
-├── README.md                 # Complete system documentation
-├── database/
-│   ├── schema.sql            # Canonical 9-table schema definition (3NF DDL)
-│   ├── sample_data.sql       # Realistic sample records in dependency order
-│   ├── queries_member1.sql   # Member 1 queries (Talent catalog, availability, skills)
-│   ├── queries_member2.sql   # Member 2 queries (Events, requirements, rosters, deficits)
-│   ├── trigger.sql           # Trigger: Availability conflict & double-booking prevention
-│   ├── procedure.sql         # Stored Procedures: Talent matching & transactional registration
-│   ├── test_member2.sql      # Comprehensive test cases for Member 2 scope
-│   ├── views.sql             # Reusable virtual tables (Rosters, fulfillments)
-│   └── inspect_kalaconnect.sql# Read-only inspection script for MySQL Workbench
-├── server/                   # Node.js & Express REST API Backend
-│   ├── package.json          # Express, mysql2, cors, dotenv
-│   ├── app.js                # Express app setup and middleware
-│   ├── index.js              # Server entry point
+├── .env                     # Local environment variables (DB credentials, port)
+├── .env.example             # Safe template for environment configuration
+├── .gitignore               # Git ignored patterns
+├── package.json             # Root scripts orchestrating backend & frontend
+├── README.md                # Project documentation and submission guide
+├── PROJECT_EXPLANATION.md   # Beginner-friendly guide, viva questions & demo script
+├── database/                # Database SQL migration and inspection scripts
+│   ├── schema.sql           # Canonical 3NF DDL for all 9 tables
+│   ├── sample_data.sql      # Realistic collegiate sample data
+│   ├── trigger.sql          # Availability overlap & booking validation triggers
+│   ├── procedure.sql        # Talent-matching & registration stored procedures
+│   ├── views.sql            # Analytical database views
+│   ├── queries_member1.sql  # 8 Member 1 SQL queries with explanations
+│   ├── queries_member2.sql  # 8 Member 2 SQL queries with explanations
+│   └── test_cases.sql       # SQL test cases for viva demonstration
+├── backend/                 # Integrated Express.js REST API Server
 │   ├── config/
-│   │   └── db.js             # mysql2/promise connection pool
-│   ├── controllers/
-│   │   ├── organizerController.js
+│   │   └── db.js            # mysql2 connection pool with auto-reconnect
+│   ├── controllers/         # Modular controllers for Member 1 & 2
+│   │   ├── activityController.js
+│   │   ├── availabilityController.js
 │   │   ├── eventController.js
+│   │   ├── lookupController.js
+│   │   ├── organizerController.js
+│   │   ├── participantController.js
 │   │   ├── participationController.js
 │   │   ├── reportController.js
-│   │   └── lookupController.js
-│   └── routes/
-│       ├── organizerRoutes.js
-│       ├── eventRoutes.js
-│       ├── participationRoutes.js
-│       ├── reportRoutes.js
-│       └── lookupRoutes.js
-└── client/                   # React 18 + Vite Desktop Web Client
-    ├── package.json          # React, Vite, Lucide icons
-    ├── vite.config.js        # Vite config with /api proxy
-    ├── index.html            # HTML entry point
-    └── src/
-        ├── main.jsx          # React DOM entry
-        ├── App.jsx           # App shell with responsive tab routing
-        ├── index.css         # Modern, desktop-friendly CSS design
-        ├── services/
-        │   └── api.js        # Reusable fetch client
-        └── components/
-            ├── Navbar.jsx    # Sticky navigation bar with branding
-            ├── Dashboard.jsx # KPI stats, deficit alerts & organizer directory
-            ├── EventsManager.jsx # Event creation, editing & filtering
-            ├── EventDetail.jsx   # Event requirements builder & progress bars
-            ├── TalentMatcher.jsx # Stored procedure execution & quick-register
-            ├── ParticipationManager.jsx # Roster & status transition manager
-            └── ReportsView.jsx   # Interactive SQL query analytical visualizer
+│   │   └── talentController.js
+│   ├── routes/              # Express API route declarations
+│   │   ├── activities.js
+│   │   ├── availability.js
+│   │   ├── eventRoutes.js
+│   │   ├── lookupRoutes.js
+│   │   ├── organizerRoutes.js
+│   │   ├── participants.js
+│   │   ├── participationRoutes.js
+│   │   ├── reportRoutes.js
+│   │   └── talents.js
+│   ├── package.json
+│   └── server.js            # Express application entry point (port 5000)
+└── frontend/                # Integrated React + Vite + Tailwind CSS Portal
+    ├── public/              # Favicon and SVGs
+    ├── src/
+    │   ├── api/
+    │   │   └── index.js     # Axios API service
+    │   ├── services/
+    │   │   └── api.js       # Fetch API service for events & matching
+    │   ├── components/      # UI components & Lucide-compatible icons
+    │   │   ├── Alert.jsx
+    │   │   ├── EventDetail.jsx
+    │   │   ├── EventsManager.jsx
+    │   │   ├── Icons.jsx    # Zero-dependency SVG icon system
+    │   │   ├── Navbar.jsx   # Responsive top navigation
+    │   │   ├── ParticipationManager.jsx
+    │   │   ├── ReportsView.jsx
+    │   │   ├── Spinner.jsx
+    │   │   └── TalentMatcher.jsx
+    │   ├── pages/           # Application views
+    │   │   ├── Activities.jsx
+    │   │   ├── Availability.jsx
+    │   │   ├── Dashboard.jsx
+    │   │   ├── MySkills.jsx
+    │   │   ├── Participants.jsx
+    │   │   └── TalentSearch.jsx
+    │   ├── App.jsx          # Route configurations
+    │   ├── index.css        # Tailwind directives + design system CSS
+    │   └── main.jsx         # React DOM root mounting
+    ├── package.json
+    ├── tailwind.config.js
+    └── vite.config.js
 ```
 
 ---
 
-## 7. Member 2 SQL Queries (`database/queries_member2.sql`)
-
-All queries are documented, tested, and executable on MySQL 8.0+:
-
-1. **Upcoming Events with Organizer Information (Q1):**
-   - Retrieves scheduled and ongoing events occurring on or after `CURRENT_DATE`.
-   - Joins `events`, `organizers`, and `cultural_activities` to display coordinator contact info, organizing club, and theme.
-2. **Participants Registered for a Selected Event (Q2):**
-   - Traverses `participation`, `participants`, and `events` for a target event (e.g., `event_id = 201`).
-   - Orders rows by status priority using `FIELD(ptn.status, 'Confirmed', 'Shortlisted', 'Registered', 'Attended', 'Cancelled')`.
-3. **Unfulfilled Event Requirements / Deficit Analysis (Q3):**
-   - Compares the required headcount in `event_requirements` against `COUNT(CASE WHEN ptn.status = 'Confirmed' THEN 1 END)`.
-   - Uses `HAVING deficit_headcount > 0` to alert coordinators about staffing shortfalls.
-4. **Participant Counts Grouped by Event (Q4):**
-   - Uses `LEFT JOIN participation` and conditional aggregation to summarize applicants, confirmed performers, shortlisted students, and pending reviews per event.
-5. **Events Belonging to a Particular Organizer (Q5):**
-   - Filters events by `organizer_id` to present an individual coordinator's event portfolio.
-6. **Popular Events Ranked by Participation (Q6):**
-   - Ranks all events by total registrations using the analytical window function `DENSE_RANK() OVER (ORDER BY COUNT(ptn.participation_id) DESC)`.
-7. **Participants Who Possess Skills Required by an Event (Q7):**
-   - Traverses 5 tables (`events` $\rightarrow$ `event_requirements` $\rightarrow$ `skills` $\rightarrow$ `participant_skills` $\rightarrow$ `participants`) to find all college students who possess any skill required by an event, displaying their proficiency and experience.
+## 11. Prerequisites
+Before running KalaConnect, ensure the following software is installed on your computer:
+- **Node.js**: Version 18.x, 20.x, or 24.x (`node -v`)
+- **npm**: Version 9.x or 10.x (`npm -v`)
+- **MySQL Community Server**: Version 8.0 or higher (`mysql --version`)
+- **Operating System**: Windows 10/11, macOS, or Linux
 
 ---
 
-## 8. Stored Procedures (`database/procedure.sql`)
+## 12. Installation and Setup
 
-### 1. `sp_match_available_talents_for_event(IN p_event_id INT)`
-- **Input:** Target Event ID.
-- **Workflow:**
-  1. Validates that the event exists in `events`; raises an exception using `SIGNAL SQLSTATE '45000'` if invalid.
-  2. Retrieves the event's date, start time, and end time.
-  3. Inspects `event_requirements` to determine all required skills.
-  4. Matches students possessing those skills from `participant_skills`.
-  5. Inspects `availability` to exclude any student marked `'Busy'` during the event window.
-  6. Inspects `participation` across other simultaneous events to exclude students already `'Confirmed'` in overlapping events (double-booking prevention).
-  7. Returns participant ID, full name, email, department, matching skill, proficiency level, years of experience, portfolio URL, and availability status (`'Explicitly Available'` vs `'Available (No Declared Conflict)'`).
+### Step 1: Clone or Open the Repository
+```powershell
+cd c:\Users\Shreya\OneDrive\Desktop\KalaConnect
+```
 
-### 2. `sp_register_event_participation(IN p_participant_id, IN p_event_id, IN p_role, OUT p_status_code, OUT p_status_message)`
-- **Purpose:** Safely registers a participant using transaction control (`START TRANSACTION`, `COMMIT`, `ROLLBACK`) and `DECLARE EXIT HANDLER FOR SQLEXCEPTION`.
-- **Validations:**
-  - Verifies event exists and is not `'Cancelled'`.
-  - Verifies participant exists.
-  - Prevents duplicate registrations (`uq_participant_event`).
-  - Verifies that the participant possesses at least one skill required by the event.
-  - Returns `p_status_code` (`1` for success, `0` for validation failure, `-1` for trigger conflict/error).
+### Step 2: Install Backend & Frontend Dependencies
+From the root folder, run:
+```powershell
+cd backend
+npm install
+cd ..\frontend
+npm install
+cd ..
+```
 
 ---
 
-## 9. Test Suite (`database/test_member2.sql`)
-
-Execute in MySQL Workbench or via command line. Includes all 6 required test scenarios:
-
-| Test Case | Scenario | Expected Outcome |
-| :--- | :--- | :--- |
-| **Test 1** | Event with matching available participants (Event 201) | Returns Participant 1 (Aarav, Hindustani Vocal) and Participant 5 (Vikram, Tabla) marked 'Explicitly Available'. |
-| **Test 2** | Event with no matching participants (Event requiring Skill 104) | Returns an empty result set (0 rows) cleanly without errors. |
-| **Test 3** | Event with unfulfilled requirements (Event 202) | Calculates Deficit: Target = 8, Confirmed = 1, Deficit = 7 open slots. |
-| **Test 4** | Participant unavailable during the event (Marked 'Busy') | Excluded by matching procedure; direct insert rejected by trigger `trg_validate_participant_availability_before_booking` (SQLSTATE 45000). |
-| **Test 5** | Participant confirmed in conflicting simultaneous event | Excluded by matching procedure; registration rejected with double-booking error (SQLSTATE 45000). |
-| **Test 6** | Invalid Event ID (e.g. ID = 9999) | Fails with `SQLSTATE 45000`: *'Invalid Event ID: The specified event does not exist in the database.'* |
-
----
-
-## 10. REST API Endpoints Specification
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| **GET** | `/api/health` | Health check endpoint |
-| **GET** | `/api/organizers` | List all coordinators with event count aggregations |
-| **GET** | `/api/organizers/:id` | Get organizer profile and their hosted events |
-| **POST** | `/api/organizers` | Register a new event coordinator |
-| **PUT** | `/api/organizers/:id` | Update coordinator contact information |
-| **GET** | `/api/events` | List events with filters (`?status=...&upcoming=true`) |
-| **GET** | `/api/events/:id` | Get event details, requirements, and participation summary |
-| **POST** | `/api/events` | Create new event (validates `end_time > start_time`) |
-| **PUT** | `/api/events/:id` | Update event schedule, status, or venue |
-| **DELETE** | `/api/events/:id` | Delete event and cascade requirements |
-| **GET** | `/api/events/:id/requirements` | List requirements with confirmed count and deficit |
-| **POST** | `/api/events/:id/requirements` | Add or update skill requirement headcount |
-| **DELETE** | `/api/events/requirements/:reqId` | Remove a skill requirement |
-| **GET** | `/api/events/:id/match-talents` | **Executes `sp_match_available_talents_for_event`** |
-| **GET** | `/api/events/:id/participants` | Get registration roster for an event |
-| **POST** | `/api/events/:id/register` | **Calls `sp_register_event_participation` with transactions** |
-| **PATCH**| `/api/participation/:id/status` | Update participant status (`Confirmed`, `Shortlisted`, etc.) |
-| **DELETE**| `/api/participation/:id` | Remove an event registration |
-| **GET** | `/api/reports/dashboard-stats` | Overall KPI metrics (events, deficits, registrations) |
-| **GET** | `/api/reports/upcoming` | Query 1: Upcoming events |
-| **GET** | `/api/reports/deficit` | Query 3: Open requirements deficit report |
-| **GET** | `/api/reports/event-counts` | Query 4: Participant counts grouped by event |
-| **GET** | `/api/reports/organizer-summary`| Query 5: Organizer event portfolio |
-| **GET** | `/api/reports/popular-events` | Query 6: Popular events ranked by participation |
-| **GET** | `/api/reports/department-distribution` | Query 7: Departmental engagement analysis |
-| **GET** | `/api/skills` | List all available skills and art domains |
-| **GET** | `/api/cultural-activities` | List cultural activities |
-| **GET** | `/api/participants` | Student talent directory |
-
----
-
-## 11. How to Set Up & Run the Project
-
-### Prerequisites:
-- **Node.js** v18+ (tested on v24)
-- **MySQL Community Server 8.0+**
-- **MySQL Workbench**
-
----
-
-### Step 1: Database Setup
-1. Open **MySQL Workbench** and connect to your local MySQL instance.
-2. Open and run [`database/schema.sql`](file:///c:/Users/achin/OneDrive/Desktop/DBMS%20Project/database/schema.sql) to create the 9 tables.
-3. Open and run [`database/sample_data.sql`](file:///c:/Users/achin/OneDrive/Desktop/DBMS%20Project/database/sample_data.sql) to populate realistic test data.
-4. Open and run [`database/trigger.sql`](file:///c:/Users/achin/OneDrive/Desktop/DBMS%20Project/database/trigger.sql) to deploy the conflict trigger.
-5. Open and run [`database/procedure.sql`](file:///c:/Users/achin/OneDrive/Desktop/DBMS%20Project/database/procedure.sql) to deploy both stored procedures.
-6. Open and run [`database/views.sql`](file:///c:/Users/achin/OneDrive/Desktop/DBMS%20Project/database/views.sql) to create virtual tables.
-7. Execute [`database/test_member2.sql`](file:///c:/Users/achin/OneDrive/Desktop/DBMS%20Project/database/test_member2.sql) to verify the 6 test cases.
-
----
-
-### Step 2: Configure Environment Variables
-Open the root `.env` file (copied from `.env.example`) and set your local MySQL password:
+## 13. Environment Variables Configuration
+Create a `.env` file in the project root directory by copying `.env.example`:
+```powershell
+copy .env.example .env
+```
+Open `.env` and verify your local MySQL credentials:
 ```env
 PORT=5000
 NODE_ENV=development
 
+# MySQL Database Configuration
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
-DB_PASSWORD=your_actual_mysql_password
+DB_PASSWORD=your_mysql_password_here
 DB_NAME=kalaconnect
 
+# Frontend Client URL
 CLIENT_URL=http://localhost:5173
 ```
+> **Security Note**: Never commit your `.env` file containing actual database passwords to version control.
 
 ---
 
-### Step 3: Run the Backend Server
-In PowerShell from the project root:
+## 14. Database Setup
+To build the database and install all triggers, stored procedures, and sample data in the correct order:
+
+### Option A: Using the MySQL Command Line
+Run the SQL scripts in this exact sequence:
 ```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-npm run start:server
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS kalaconnect;"
+mysql -u root -p kalaconnect < database\schema.sql
+mysql -u root -p kalaconnect < database\sample_data.sql
+mysql -u root -p kalaconnect < database\trigger.sql
+mysql -u root -p kalaconnect < database\procedure.sql
+mysql -u root -p kalaconnect < database\views.sql
 ```
-The server will start on `http://localhost:5000`. Test it in your browser:
-- Health check: `http://localhost:5000/api/health`
-- Events: `http://localhost:5000/api/events`
+
+### Option B: Using MySQL Workbench
+1. Open MySQL Workbench and connect to your local MySQL instance.
+2. Open and execute `database/schema.sql` (Creates tables).
+3. Open and execute `database/sample_data.sql` (Inserts seed data).
+4. Open and execute `database/trigger.sql` (Installs validation triggers).
+5. Open and execute `database/procedure.sql` (Installs stored procedures).
+6. Open and execute `database/views.sql` (Installs views).
 
 ---
 
-### Step 4: Run the Frontend Client
-In a second terminal window from the project root:
+## 15. Running the Application
+
+Open **two separate terminal windows** on Windows:
+
+### Terminal 1: Start the Backend API Server
 ```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-npm run dev:client
+cd c:\Users\Shreya\OneDrive\Desktop\KalaConnect
+npm run backend
 ```
-The Vite development server will start on `http://localhost:5173`. Open this URL in your web browser.
+*The server will start on `http://localhost:5000` and test database connectivity.*
+
+### Terminal 2: Start the Frontend React Client
+```powershell
+cd c:\Users\Shreya\OneDrive\Desktop\KalaConnect
+npm run frontend
+```
+*The Vite development server will start on `http://localhost:5173`.*
+
+Open your web browser and navigate to: **`http://localhost:5173`**
 
 ---
 
-## 12. Verification & Evaluation Highlights
+## 16. Application Workflows
 
-- **Adherence to 3NF:** All 9 tables adhere to third normal form with clear foreign key constraints and no transitive dependencies.
-- **Trigger Integrity:** Double bookings and scheduling conflicts are aborted with descriptive error messages.
-- **Stored Procedure Power:** `sp_match_available_talents_for_event` dynamically checks availability and excludes conflicting commitments.
-- **Transaction Safety:** `sp_register_event_participation` wraps validations and insertions in atomic transactions with automatic rollback on errors.
-- **Responsive UI:** Modern desktop-first web application featuring cards, status badges, modal dialogs, and progress bars.
+### Participant Workflow
+1. Navigate to **Participants** (`/participants`) and register personal and academic details.
+2. Navigate to **My Skills** (`/skills`), select the participant, and assign cultural skills with proficiency (Beginner, Intermediate, Advanced, Professional) and experience years.
+3. Navigate to **Availability** (`/availability`), specify dates and time intervals (e.g., `14:00 - 18:00`). The database trigger verifies that no conflicting or overlapping slot exists.
+4. The participant is now indexed and immediately available for organizer talent searches and event talent matching.
+
+### Organizer & Coordination Workflow
+1. Navigate to **Events & Reqs** (`/events`) and click **"Create Cultural Event"**.
+2. Specify event title, organizing club, date, start time, end time, and campus venue.
+3. Open the event details and click **"Add Skill Requirement"** to specify needed skills and headcounts (e.g., 2 Tabla players).
+4. Click **"Launch Talent Matcher"** (`/talent-matcher`). The system invokes `sp_match_available_talents_for_event`, checking candidate skills, proficiency, explicit availability, and absence of clashing assignments.
+5. Click **"Register Participant"** to create a participation record (`status = 'Registered'`).
+6. Navigate to **Roster & Approvals** (`/participation`), review the candidates, and click **"Confirm"** (Approve).
+7. If another simultaneous event tries to book this confirmed participant, the database trigger rejects the conflicting assignment.
+8. Navigate to **Deficits & Reports** (`/reports`) to track remaining unfilled skill quotas across all campus events.
+
+---
+
+## 17. API Endpoints Documentation
+
+### Health & Analytics
+- `GET /api/health`: Server health check.
+- `GET /api/dashboard/stats`: Member 1 participant and category statistics.
+- `GET /api/reports/dashboard-stats`: Member 2 event, organizer, and deficit metrics.
+- `GET /api/reports/deficit`: Detailed skill requirement deficit report.
+- `GET /api/reports/upcoming`: List of upcoming scheduled events.
+- `GET /api/reports/popular-events`: Ranking of events by registration volume.
+- `GET /api/reports/department-distribution`: Student participation grouped by department.
+
+### Participants (Member 1)
+- `GET /api/participants`: Retrieve all participants.
+- `POST /api/participants`: Register a new participant.
+- `GET /api/participants/:id`: Retrieve single participant details.
+- `PUT /api/participants/:id`: Update participant profile.
+- `DELETE /api/participants/:id`: Remove participant.
+- `GET /api/participants/:id/skills`: Get skills possessed by participant.
+- `POST /api/participants/:id/skills`: Add skill with proficiency & experience.
+- `PUT /api/participants/:id/skills/:skillId`: Update skill proficiency.
+- `DELETE /api/participants/:id/skills/:skillId`: Delete participant skill.
+- `GET /api/participants/:id/availability`: Retrieve participant availability slots.
+- `POST /api/participants/:id/availability`: Add availability slot (validated by trigger).
+
+### Availability & Talents (Member 1)
+- `PUT /api/availability/:id`: Update an availability slot.
+- `DELETE /api/availability/:id`: Delete an availability slot.
+- `GET /api/activities`: Retrieve all cultural activities and categories.
+- `GET /api/activities/:id/skills`: Retrieve all skills under a cultural activity.
+- `GET /api/talents/search`: Multi-attribute talent search.
+- `GET /api/talents/available`: Search talent by available date/time window.
+
+### Organizers & Events (Member 2)
+- `GET /api/organizers`: Retrieve all organizers.
+- `POST /api/organizers`: Create an organizer profile.
+- `GET /api/organizers/:id`: Retrieve organizer profile with organized events.
+- `PUT /api/organizers/:id`: Update organizer details.
+- `GET /api/events`: List events with optional filters (`status`, `upcoming`, `organizer_id`).
+- `POST /api/events`: Create a cultural event.
+- `GET /api/events/:id`: Retrieve event details, skill quotas, and fulfillment summaries.
+- `PUT /api/events/:id`: Update event schedule or details.
+- `DELETE /api/events/:id`: Cancel or delete an event.
+- `GET /api/events/:id/requirements`: Retrieve skill requirements for an event.
+- `POST /api/events/:id/requirements`: Add a skill requirement quota.
+- `DELETE /api/events/requirements/:reqId`: Delete an event skill requirement.
+
+### Talent Matching & Participation (Member 2)
+- `GET /api/events/:id/match-talents`: Executes stored procedure `sp_match_available_talents_for_event`.
+- `GET /api/events/:id/participants`: Retrieve roster of participants for an event.
+- `POST /api/events/:id/register`: Register participant via stored procedure `sp_register_event_participation`.
+- `PATCH /api/participation/:id/status`: Update status (`Registered`, `Shortlisted`, `Confirmed`, `Attended`, `Cancelled`).
+- `DELETE /api/participation/:id`: Remove participation entry.
+
+---
+
+## 18. SQL Concepts Demonstrated
+
+### 1. Primary & Foreign Keys with Referential Actions
+- `ON UPDATE CASCADE` ensures primary key updates propagate automatically.
+- `ON DELETE CASCADE` automatically cleans up dependent slots and skills when a participant is deleted.
+- `ON DELETE RESTRICT` protects cultural activities from being accidentally deleted while skills reference them.
+
+### 2. Check Constraints & Enums
+- `CHECK (year_of_study BETWEEN 1 AND 5)` enforces valid undergraduate/postgraduate years.
+- `CHECK (end_time > start_time)` ensures chronological validity across events and availability slots.
+- `ENUM` constraints for standardized categorization: `proficiency_level`, `status`, `event_status`.
+
+### 3. Database Triggers
+- **`trg_validate_availability_before_insert`**: Rejects non-chronological slots and queries the table to block overlapping time slots for the same participant on the same date:
+  ```sql
+  start_time < NEW.end_time AND end_time > NEW.start_time
+  ```
+- **`trg_validate_availability_before_update`**: Permits slot updates without self-conflicting using `AND availability_id <> OLD.availability_id`.
+- **`trg_validate_participant_availability_before_booking`**: Fired on `BEFORE INSERT ON participation`; prevents adding participants who are marked 'Busy' or already 'Confirmed' in another simultaneous event.
+
+### 4. Stored Procedures
+- **`sp_match_available_talents_for_event`**: Accepts an event ID, extracts schedule, cross-joins event requirements with participant skills, checks for explicit availability versus declared conflicts, filters out simultaneous commitments, and orders candidates by proficiency rank.
+- **`sp_register_event_participation`**: Uses ACID transactions (`START TRANSACTION`, `COMMIT`, `ROLLBACK`) with error handlers (`DECLARE EXIT HANDLER FOR SQLEXCEPTION`) to atomically validate event existence, requirement matching, and conflict avoidance.
+
+### 5. Multi-Table Joins & Aggregations
+- Queries utilize `INNER JOIN`, `LEFT JOIN`, `GROUP BY`, `HAVING`, and window functions (`DENSE_RANK() OVER`) to generate analytical reports like the deficit headcount report.
+
+---
+
+## 19. Verification and Test Results
+
+The application underwent rigorous end-to-end testing against a live MySQL instance:
+
+| Test Scenario | Module | Verification Method | Result |
+|---|---|---|---|
+| **TEST 1: Participant Registration** | Member 1 | POST `/api/participants` &rarr; checked in MySQL | **PASSED** |
+| **TEST 2: Skill Assignment** | Member 1 | POST `/api/participants/:id/skills` &rarr; verified in `participant_skills` | **PASSED** |
+| **TEST 3: Availability Declaration** | Member 1 | POST `/api/participants/:id/availability` &rarr; verified in `availability` | **PASSED** |
+| **TEST 4: Overlapping Availability** | Member 1 | Trigger rejection check with overlapping time window | **PASSED (Rejected with 45000)** |
+| **TEST 5: Organizer Registration** | Member 2 | POST `/api/organizers` &rarr; verified in `organizers` | **PASSED** |
+| **TEST 6: Event Scheduling** | Member 2 | POST `/api/events` &rarr; verified in `events` | **PASSED** |
+| **TEST 7: Event Skill Quotas** | Member 2 | POST `/api/events/:id/requirements` &rarr; verified in `event_requirements` | **PASSED** |
+| **TEST 8: Stored Procedure Match** | Member 2 | Executed `sp_match_available_talents_for_event` via API | **PASSED** |
+| **TEST 9: Candidate Filtering** | Member 2 | Verified matching skill, experience, and 'Explicitly Available' tag | **PASSED** |
+| **TEST 10: Participation Request** | Member 2 | POST `/api/events/:id/register` &rarr; record added with status 'Registered' | **PASSED** |
+| **TEST 11: Coordinator Approval** | Member 2 | PATCH `/api/participation/:id/status` &rarr; updated to 'Confirmed' | **PASSED** |
+| **TEST 12: DB Status Persistence** | Member 2 | Direct SQL query verified status in MySQL table `participation` | **PASSED** |
+| **TEST 13: Conflict Prevention** | Shared | Direct booking on simultaneous event rejected by trigger | **PASSED (Blocked)** |
+| **TEST 14: Analytics & Dashboards** | Shared | Verified Deficit Report, Popular Events, Department distribution | **PASSED** |
+| **Frontend Production Build** | Shared | Executed `npm --prefix frontend run build` | **PASSED (0 errors, 0 warnings)** |
+| **API Endpoints Test Suite** | Shared | Automated probe of all 17 REST endpoints | **PASSED (17/17 Passed)** |
+
+---
+
+## 20. Future Enhancements
+- **SMS / Email Notifications**: Automated email notifications via Nodemailer when a participation request is confirmed or shortlisted.
+- **Audio/Video Media Uploads**: Integration with Cloudinary or AWS S3 for direct portfolio video previews on the talent matcher screen.
+- **QR Code Attendance System**: Instant attendance verification by scanning participant event badges on stage day.
+- **Role-Based Authentication**: JWT-based login for participants and organizers with password hashing (bcrypt).
+
+---
+
+## 21. Conclusion
+**KalaConnect** successfully integrates all assigned modules of Member 1 and Member 2 into a single, cohesive, production-grade application. By coupling an intuitive React frontend with a robust Express backend and a normalized MySQL database featuring stored procedures and triggers, the project delivers a complete solution for cultural talent discovery, scheduling, and event coordination.

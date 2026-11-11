@@ -171,3 +171,26 @@ exports.removeSkill = async (req, res) => {
     res.status(500).json({ error: 'Database error', details: err.message });
   }
 };
+
+// GET /api/participants/:id/stats
+exports.getStats = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [[skills]] = await pool.query('SELECT COUNT(*) AS my_skills FROM participant_skills WHERE participant_id = ?', [id]);
+    const [[slots]] = await pool.query('SELECT COUNT(*) AS available_slots FROM availability WHERE participant_id = ?', [id]);
+    const [[upcoming]] = await pool.query("SELECT COUNT(*) AS upcoming_events FROM events WHERE status = 'Scheduled'");
+    const [[registrations]] = await pool.query('SELECT COUNT(*) AS my_registrations FROM participation WHERE participant_id = ?', [id]);
+
+    res.json({
+      success: true,
+      data: {
+        my_skills: skills?.my_skills || 0,
+        available_slots: slots?.available_slots || 0,
+        upcoming_events: upcoming?.upcoming_events || 0,
+        my_registrations: registrations?.my_registrations || 0
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};

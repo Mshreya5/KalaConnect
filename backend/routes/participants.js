@@ -13,6 +13,7 @@ router.post('/:id/skills', pc.addSkill);
 router.put('/:id/skills/:skillId', pc.updateSkill);
 router.delete('/:id/skills/:skillId', pc.removeSkill);
 
+router.get('/:id/stats', pc.getStats);
 router.get('/:id/availability', require('../controllers/availabilityController').getByParticipant);
 router.post('/:id/availability', require('../controllers/availabilityController').create);
 

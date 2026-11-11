@@ -8,6 +8,7 @@ export const getDashboardStats = () => api.get('/dashboard/stats');
 
 export const getParticipants = () => api.get('/participants');
 export const getParticipant = (id) => api.get(`/participants/${id}`);
+export const getParticipantStats = (id) => api.get(`/participants/${id}/stats`);
 export const createParticipant = (data) => api.post('/participants', data);
 export const updateParticipant = (id, data) => api.put(`/participants/${id}`, data);
 export const deleteParticipant = (id) => api.delete(`/participants/${id}`);

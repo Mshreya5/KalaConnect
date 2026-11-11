@@ -71,5 +71,8 @@ export const api = {
   // Lookups
   getSkills: () => request('/skills'),
   getCulturalActivities: () => request('/cultural-activities'),
-  getParticipants: () => request('/participants'),
+  getParticipants: async () => {
+    const res = await request('/participants');
+    return Array.isArray(res) ? { success: true, data: res } : res;
+  },
 };
